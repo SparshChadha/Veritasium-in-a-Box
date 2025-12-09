@@ -1,0 +1,247 @@
+id: multi-agent-research
+namespace: dev
+
+inputs:
+  - id: topic
+    type: STRING
+    defaults: "Quantum Entanglement"
+
+tasks:
+  # Parallel execution of three research agents
+  - id: parallel_research
+    type: io.kestra.core.tasks.flows.Parallel
+    tasks:
+      # Agent A: The Historian - Wikipedia background research
+      - id: agent_a_historian
+        type: io.kestra.plugin.scripts.python.Script
+        allowFailure: false
+        beforeCommands:
+          - pip install requests
+        script: |
+          import json
+          import requests
+          import urllib.parse
+          
+          topic = "{{ inputs.topic }}"
+          
+          try:
+              # Use requests library with proper User-Agent header
+              url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(topic)}"
+              headers = {
+                  'User-Agent': 'VeritasiumHackathonBot/1.0'
+              }
+              
+              response = requests.get(url, headers=headers, timeout=10)
+              response.raise_for_status()
+              data = response.json()
+              
+              result = {
+                  "agent": "Historian",
+                  "topic": topic,
+                  "title": data.get("title", ""),
+                  "extract": data.get("extract", ""),
+                  "url": data.get("content_urls", {}).get("desktop", {}).get("page", ""),
+                  "status": "success"
+              }
+              
+          except Exception as e:
+              result = {
+                  "agent": "Historian",
+                  "topic": topic,
+                  "error": str(e),
+                  "status": "failed"
+              }
+          
+          # Write to specific JSON file
+          with open("historian.json", "w") as f:
+              json.dump(result, f, indent=2)
+          
+          print(f"Historian agent completed with status: {result['status']}")
+        outputFiles:
+          - "historian.json"
+
+      # Agent B: The Skeptic - Reddit debates and misconceptions
+      - id: agent_b_skeptic
+        type: io.kestra.plugin.scripts.python.Script
+        allowFailure: true  # Allow failure so other agents continue
+        beforeCommands:
+          - pip install requests
+        script: |
+          import json
+          import requests
+          
+          topic = "{{ inputs.topic }}"
+          
+          try:
+              # Use Reddit's JSON API (no authentication needed for public data)
+              subreddits = ["science", "explainlikeimfive", "askscience"]
+              all_posts = []
+              
+              for subreddit in subreddits:
+                  try:
+                      # Reddit JSON API endpoint
+                      url = f"https://www.reddit.com/r/{subreddit}/search.json"
+                      params = {
+                          "q": topic + " (misconception OR debate OR myth OR wrong)",
+                          "sort": "relevance",
+                          "limit": 5,
+                          "t": "all"
+                      }
+                      
+                      headers = {
+                          "User-Agent": "VeritasiumHackathonBot/1.0"
+                      }
+                      
+                      response = requests.get(url, params=params, headers=headers, timeout=10)
+                      
+                      if response.status_code == 200:
+                          data = response.json()
+                          posts = data.get("data", {}).get("children", [])
+                          
+                          for post in posts[:3]:  # Top 3 from each subreddit
+                              post_data = post.get("data", {})
+                              all_posts.append({
+                                  "subreddit": subreddit,
+                                  "title": post_data.get("title", ""),
+                                  "text": post_data.get("selftext", "")[:500],  # First 500 chars
+                                  "score": post_data.get("score", 0),
+                                  "num_comments": post_data.get("num_comments", 0),
+                                  "url": f"https://reddit.com{post_data.get('permalink', '')}"
+                              })
+                  except Exception as e:
+                      print(f"Error fetching from r/{subreddit}: {str(e)}")
+                      continue
+              
+              result = {
+                  "agent": "Skeptic",
+                  "topic": topic,
+                  "posts": all_posts,
+                  "total_found": len(all_posts),
+                  "status": "success"
+              }
+              
+          except Exception as e:
+              result = {
+                  "agent": "Skeptic",
+                  "topic": topic,
+                  "error": str(e),
+                  "status": "failed"
+              }
+          
+          # Write to specific JSON file
+          with open("skeptic.json", "w") as f:
+              json.dump(result, f, indent=2)
+          
+          print(f"Skeptic agent completed with status: {result['status']}")
+        outputFiles:
+          - "skeptic.json"
+
+      # Agent C: The Professor - arXiv academic papers
+      - id: agent_c_professor
+        type: io.kestra.plugin.scripts.python.Script
+        allowFailure: false
+        beforeCommands:
+          - pip install arxiv
+        script: |
+          import json
+          import arxiv
+          
+          topic = "{{ inputs.topic }}"
+          
+          try:
+              # Search arXiv for relevant papers
+              search = arxiv.Search(
+                  query=topic,
+                  max_results=3,
+                  sort_by=arxiv.SortCriterion.Relevance
+              )
+              
+              papers = []
+              for paper in search.results():
+                  papers.append({
+                      "title": paper.title,
+                      "authors": [author.name for author in paper.authors],
+                      "abstract": paper.summary[:500],  # First 500 chars
+                      "published": paper.published.strftime("%Y-%m-%d"),
+                      "pdf_url": paper.pdf_url,
+                      "categories": paper.categories
+                  })
+              
+              result = {
+                  "agent": "Professor",
+                  "topic": topic,
+                  "papers": papers,
+                  "total_found": len(papers),
+                  "status": "success"
+              }
+              
+          except Exception as e:
+              result = {
+                  "agent": "Professor",
+                  "topic": topic,
+                  "error": str(e),
+                  "status": "failed"
+              }
+          
+          # Write to specific JSON file
+          with open("professor.json", "w") as f:
+              json.dump(result, f, indent=2)
+          
+          print(f"Professor agent completed with status: {result['status']}")
+        outputFiles:
+          - "professor.json"
+
+  # Data Aggregation and Synthesis
+  - id: director_synthesis
+    type: io.kestra.plugin.scripts.python.Script
+    # MAGIC FIX: Mount the files directly instead of reading them as strings
+    inputFiles:
+      historian.json: "{{ outputs.agent_a_historian.outputFiles['historian.json'] }}"
+      skeptic.json: "{{ outputs.agent_b_skeptic.outputFiles['skeptic.json'] }}"
+      professor.json: "{{ outputs.agent_c_professor.outputFiles['professor.json'] }}"
+    script: |
+      import json
+      import os
+      
+      # Helper function to safely load a file
+      def load_agent_data(filename, agent_name):
+          if not os.path.exists(filename):
+              return {"agent": agent_name, "status": "failed", "error": "File missing"}
+          try:
+              with open(filename, 'r') as f:
+                  return json.load(f)
+          except Exception as e:
+              return {"agent": agent_name, "status": "error", "error": str(e)}
+
+      # Now we just open them like normal files! No more syntax errors.
+      historian_data = load_agent_data("historian.json", "Historian")
+      skeptic_data = load_agent_data("skeptic.json", "Skeptic")
+      professor_data = load_agent_data("professor.json", "Professor")
+      
+      # Create combined JSON
+      combined_research = {
+          "topic": "{{ inputs.topic }}",
+          "timestamp": "{{ execution.startDate }}",
+          "agents": {
+              "historian": historian_data,
+              "skeptic": skeptic_data,
+              "professor": professor_data
+          },
+          "summary": {
+              "historian_status": historian_data.get("status", "unknown"),
+              "skeptic_status": skeptic_data.get("status", "unknown"),
+              "professor_status": professor_data.get("status", "unknown")
+          }
+      }
+      
+      print("="*80)
+      print("TRIANGLE OF TRUTH - COMBINED RESEARCH OUTPUT")
+      print("="*80)
+      print(json.dumps(combined_research, indent=2))
+      print("="*80)
+      
+      with open("combined_research.json", "w") as f:
+          json.dump(combined_research, f, indent=2)
+
+    outputFiles:
+      - "combined_research.json"

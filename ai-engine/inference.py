@@ -6,6 +6,15 @@ MODEL_PATH = "./model_adapters"
 MAX_SEQ_LENGTH = 8192
 
 def generate_script(topic):
+    """
+    Generate a Veritasium-style video script for a given topic.
+    
+    Parameters:
+        topic (str): Topic or prompt to base the script on.
+    
+    Returns:
+        str: Generated script text.
+    """
     print(f"⏳ Loading Veritasium model for topic: {topic}...")
     
     model, tokenizer = FastLanguageModel.from_pretrained(

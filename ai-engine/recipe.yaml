@@ -1,0 +1,34 @@
+model:
+  model_name: "meta-llama/Meta-Llama-3.1-8B-Instruct" # ERROR 1: Oumi uses 'model_name', not 'from_pretrained'
+  torch_dtype_str: "bfloat16"
+  trust_remote_code: true
+  load_in_4bit: true                 # Correctly enables QLoRA quantization
+
+data:
+  train:
+    datasets:
+      - dataset_name: "text_sft"     # ERROR 2: Must specify 'text_sft' so Oumi knows to parse the 'messages' format
+        dataset_path: "veritasium_train.jsonl"
+        split: "train"
+
+training:
+  output_dir: "model_adapters"
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  learning_rate: 2e-4
+  num_train_epochs: 3
+  logging_steps: 10
+  save_steps: 50
+  optimizer: "adamw_torch"
+
+# ERROR 3: Oumi uses a top-level 'peft' block, not nested under 'adapter'
+peft:
+  use_peft: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"

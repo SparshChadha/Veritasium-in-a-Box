@@ -1,0 +1,12 @@
+youtube-transcript-api
+scrapetube
+oumi[gpu]
+torch
+transformers
+huggingface_hub
+unsloth[colab-new]
+xformers
+trl
+peft
+accelerate
+bitsandbytes

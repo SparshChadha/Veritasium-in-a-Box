@@ -1,0 +1,5 @@
+output/
+__pycache__/
+*.safetensors
+.venv/
+ai-engine/model_adapters/

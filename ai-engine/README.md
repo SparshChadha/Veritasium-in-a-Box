@@ -49,20 +49,49 @@ oumi train -c recipe.yaml
 
 **Note:** The fine-tuned model adapters will be saved directly to the `model_adapters/` folder.
 
-## 5. Inference (Unsloth)
+## 5. Inference - Generate Scripts
 
-We use **Unsloth** (`FastLanguageModel`) for inference because it handles LoRA adapters significantly faster than standard Hugging Face implementations.
+There are two ways to generate Veritasium-style scripts with your fine-tuned model:
 
-To generate a new Veritasium-style script:
+### Option A: generate_script.py (Recommended - Cross-Platform)
+
+Uses standard `transformers` + `peft` libraries, works on any system (Mac, Linux, Windows):
 
 ```bash
+# Interactive mode (recommended)
+python generate_script.py
+
+# Or generate directly from command line
+python generate_script.py --topic "Why is the sky blue?"
+
+# Save to file
+python generate_script.py -t "How do black holes work?" -o blackhole_script.txt
+```
+
+**Features:**
+- Works on Mac, Linux, Windows
+- Works with or without GPU
+- Interactive mode for easy use
+- Flexible generation parameters
+- Automatic script saving
+
+See `USAGE.md` for detailed instructions and examples.
+
+### Option B: inference.py (Faster - Linux/Windows GPU only)
+
+Uses **Unsloth** (`FastLanguageModel`) for faster inference on Linux/Windows systems with NVIDIA GPUs:
+
+```bash
+pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
 python inference.py
 ```
 
+**Note:** Unsloth only works on Linux/Windows with NVIDIA GPU. Use `generate_script.py` for Mac or CPU-only systems.
+
 ### How Inference Works:
 
-The `inference.py` script:
-
-1. Loads the base Llama 3.1 model in 4-bit quantization.
-2. Attaches your custom adapters from `model_adapters/`.
-3. Uses a chat template to prompt the model to "Write a Veritasium-style video script."
+Both scripts:
+1. Load the base Llama 3.1 model in 4-bit quantization (if GPU available)
+2. Attach your custom LoRA adapters from `model_adapters/`
+3. Use a chat template to prompt the model to "Write a Veritasium-style video script"
+4. Generate creative, educational content in Derek's signature style

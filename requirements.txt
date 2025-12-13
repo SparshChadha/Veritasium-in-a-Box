@@ -1,0 +1,31 @@
+# Core AI/ML packages
+torch>=2.0.0
+transformers>=4.30.0
+huggingface_hub>=0.16.0
+accelerate>=0.20.0
+peft>=0.4.0
+trl>=0.7.0
+
+# Model optimization
+unsloth>=2024.1
+together>=0.1.0
+
+# API clients
+cerebras_cloud_sdk>=0.1.0
+elevenlabs>=1.0.0
+edge-tts>=6.1.0
+
+# Data processing
+requests>=2.31.0
+python-slugify>=8.0.0
+python-dotenv>=1.0.0
+
+# Content processing
+youtube-transcript-api>=0.6.0
+scrapetube>=2.5.1
+
+# Oumi framework
+oumi>=0.1.0
+
+# Note: Some packages like xformers and bitsandbytes are excluded
+# as they require specific hardware (NVIDIA GPU) and cause issues on Mac

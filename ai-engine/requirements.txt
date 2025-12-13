@@ -1,12 +1,20 @@
 youtube-transcript-api
 scrapetube
-oumi[gpu]
+oumi                 # Changed from oumi[gpu] to just oumi
 torch
 transformers
 huggingface_hub
-unsloth[colab-new]
-xformers
 trl
 peft
 accelerate
-bitsandbytes
+together
+requests
+unsloth  # For fast local inference
+cerebras_cloud_sdk  # For Cerebras API integration
+python-dotenv  # For environment variable management
+python-slugify  # For Kestra filenames
+edge-tts  # For text-to-speech generation
+elevenlabs  # For high-quality voice synthesis
+# xformers           # REMOVED: Causes build errors on Mac
+# bitsandbytes       # REMOVED: Requires NVIDIA GPU
+# unsloth[colab-new] # REMOVED: Only works on Linux/Windows NVIDIA

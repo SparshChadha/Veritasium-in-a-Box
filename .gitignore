@@ -1,5 +1,104 @@
-output/
+# Output folders (generated content)
+research_outputs/
+video_output/generated_tts/
+video_output/generated_video/
+ai-engine/final_5min_script.md
+ai-engine/Veritasium_Script.txt
+ai-engine/Sources.txt
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Python
 __pycache__/
-*.safetensors
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
 .venv/
-ai-engine/model_adapters/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Model files (large)
+*.bin
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+.dockerignore
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+.coverage
+htmlcov/
+
+# Large data files
+veritasium_train.jsonl
+*.jsonl
+
+# Ignore notebooks with potential secrets
+fine_tuned_model/*.ipynb
+
+
+fine_tuned_model/model_adapters/

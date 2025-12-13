@@ -1,12 +1,9 @@
-version: "3"
-
+version: "3.8"
 volumes:
   postgres-data:
   kestra-data:
-
 networks:
   kestra:
-
 services:
   # Database for Kestra to store flow history
   postgres:
@@ -28,7 +25,8 @@ services:
   # The Kestra Server
   kestra:
     image: kestra/kestra:latest
-    command: server local
+    user: "root"
+    command: server standalone
     environment:
       KESTRA_CONFIGURATION: |
         datasources:
@@ -37,21 +35,90 @@ services:
             username: kestra
             password: kestra_password
             driverClassName: org.postgresql.Driver
-        
-        # This allows you to run Python scripts (for Oumi/Video generation)
         kestra:
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              basePath: /app/storage
+          queue:
+            type: postgres
+          security:
+            basic:
+              enabled: false
+          # This allows you to run Python scripts (for Oumi/Video generation)
           tasks:
             scripts:
               python:
-                virtualenv: 
+                virtualenv:
                   enabled: true
+            tmpDir:
+              path: "/tmp/kestra-wd/tmp"
     ports:
       - "8080:8080"
     volumes:
       - kestra-data:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock # Allows Kestra to launch other docker containers (crucial for AI)
+      - /tmp/kestra-wd:/tmp/kestra-wd
+      - ./research_outputs:/app/research_outputs  # Mount for research outputs
+      - ./kestra:/app/flows  # Mount workflows directory
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - kestra
+    healthcheck:  # Optional: Ensures Kestra ready
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Backend API service
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"  # FastAPI backend
+    volumes:
+      - ./research_outputs:/app/research_outputs  # Read/write access to outputs
+      - ./video_output:/app/video_output  # Read/write access to video outputs
+    environment:
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ATLASCLOUD_API_KEY=${ATLASCLOUD_API_KEY}
+    networks:
+      - kestra
+    depends_on:
+      - kestra
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Model serving service for fine-tuned script generation
+  model-serve:
+    build: ./fine_tuned_model
+    ports:
+      - "8001:8000"  # FastAPI for draft generation (changed port to avoid conflict)
+    volumes:
+      - ./research_outputs:/app/outputs
+    environment:
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+    networks:
+      - kestra
+    depends_on:
+      - kestra
+
+  # Frontend React application
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./research_outputs:/app/public/research_outputs:ro  # Read-only access to outputs
+    networks:
+      - kestra
+    depends_on:
+      - backend

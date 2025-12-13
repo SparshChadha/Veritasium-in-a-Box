@@ -1,109 +1,161 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Activity, Sparkles, Zap } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { Zap } from 'lucide-react'
 import HeroSection from './components/HeroSection'
 import StudioView from './components/StudioView'
 import AuthView from './components/AuthView'
+
+// In production (nginx), we proxy /api -> backend, so default to '/api'
+// In local dev, set VITE_API_BASE_URL=http://localhost:8000
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function App() {
   const [currentView, setCurrentView] = useState('hero') // 'hero' | 'studio' | 'auth'
   const [generatedContent, setGeneratedContent] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [taskId, setTaskId] = useState(null)
+  const [pipeline, setPipeline] = useState(null)
+  const pollRef = useRef(null)
 
   const handleGenerate = async (topic) => {
+    // reset state
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+    setGeneratedContent(null)
+    setPipeline(null)
+    setTaskId(null)
     setIsGenerating(true)
     setCurrentView('studio')
 
-    // Simulate API call - replace with actual API integration
-    setTimeout(() => {
-      setGeneratedContent({
-        title: `The Truth About ${topic}`,
-        script: `# The Truth About ${topic}
+    // Start backend pipeline
+    const res = await fetch(`${API_BASE}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic,
+        tts_engine: 'elevenlabs',
+        generate_video: true,
+      }),
+    })
 
-## Introduction
-*[DRAMATIC MUSIC PLAYS]*
-
-**NARRATOR:** In our quest to understand the universe, few questions have puzzled humanity more than...
-
-## The Core Mystery
-*[VISUAL: Time-lapse of seasons changing]*
-
-**NARRATOR:** What is the arrow of time? Why does time only flow forward?
-
-## Scientific Breakthrough
-*[VISUAL: Einstein's relativity equations]*
-
-**NARRATOR:** Recent discoveries in quantum physics suggest...
-
-## Conclusion
-*[VISUAL: Beautiful cosmic imagery]*
-
-**NARRATOR:** The arrow of time remains one of physics' greatest mysteries...`,
-        thumbnail: null, // Will be generated
-        stats: {
-          views: '1.2M',
-          likes: '45K',
-          duration: '5:23'
-        }
-      })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
       setIsGenerating(false)
-    }, 3000)
+      setPipeline({ status: 'failed', error: `Backend error: ${res.status} ${text}` })
+      return
+    }
+
+    const data = await res.json()
+    setTaskId(data.task_id)
   }
+
+  useEffect(() => {
+    if (!taskId) return
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/status/${taskId}`)
+        if (!res.ok) throw new Error(`status ${res.status}`)
+        const status = await res.json()
+        setPipeline(status)
+
+        if (status.status === 'failed') {
+          setIsGenerating(false)
+          if (pollRef.current) clearInterval(pollRef.current)
+          pollRef.current = null
+          return
+        }
+
+        if (status.status === 'completed') {
+          if (pollRef.current) clearInterval(pollRef.current)
+          pollRef.current = null
+
+          const files = status.files || {}
+          const title = `The Truth About ${status.topic || 'Your Topic'}`
+
+          // Fetch final script markdown (best UX) — fallback to empty if not available
+          let scriptText = ''
+          if (files.final_script) {
+            const scriptRes = await fetch(`${API_BASE}/download/${encodeURI(files.final_script)}`)
+            if (scriptRes.ok) scriptText = await scriptRes.text()
+          }
+
+          const audioUrl = files.tts_audio ? `${API_BASE}/download/${encodeURI(files.tts_audio)}` : null
+          const videoUrl = files.video ? `${API_BASE}/download/${encodeURI(files.video)}` : null
+
+          setGeneratedContent({
+            title,
+            script: scriptText,
+            audioUrl,
+            videoUrl,
+            stats: { views: '—', likes: '—', duration: '—' },
+          })
+          setIsGenerating(false)
+        }
+      } catch {
+        setPipeline((p) => ({ ...(p || {}), status: 'running', error: null }))
+      }
+    }
+
+    poll()
+    pollRef.current = setInterval(poll, 1500)
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [taskId])
 
   const handleBackToHero = () => {
     setCurrentView('hero')
     setGeneratedContent(null)
     setIsGenerating(false)
+    setTaskId(null)
+    setPipeline(null)
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
   }
 
   return (
-    <div className="min-h-screen bg-dark-slate relative overflow-x-hidden">
-      {/* Global moving background (studio lighting) */}
+    <div className="min-h-screen relative overflow-x-hidden">
+      {/* Subtle animated gradient background */}
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="moving-aurora" />
-        {/* Keep streaks extremely subtle so they don't read as a strip */}
-        <div className="diagonal-streaks opacity-[0.06]" />
-        <div className="gradient-overlay" />
-        <div className="top-haze" />
-        <div className="vignette" />
-        <div className="film-grain" />
       </div>
-      {/* Fixed Glassmorphism Navbar */}
+      {/* Minimal Clean Navbar */}
       <motion.nav
-        initial={{ y: -100, opacity: 0 }}
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50"
+        transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          {/* StreamNext-like floating header card */}
-          <div className="relative rounded-2xl bg-white/6 border border-white/12 backdrop-blur-xl shadow-[0_18px_55px_rgba(0,0,0,0.35)]">
-            <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-neon-cyan/40 to-transparent" />
-            <div className="px-4 sm:px-5 py-3 flex items-center justify-between gap-4">
-            <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }}>
-              <div className="w-9 h-9 bg-gradient-to-r from-neon-blue to-neon-cyan rounded-xl flex items-center justify-center shadow-[0_0_24px_rgba(0,242,254,0.18)]">
-                <Zap className="w-5 h-5 text-black" />
-              </div>
-              <div className="leading-tight">
-                <div className="text-lg md:text-xl font-cinzel font-bold tracking-wide text-white/90">
-                  ELEMENT OF TRUTH
-                </div>
-              </div>
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.02 }}>
+              <Zap className="w-5 h-5 text-blue-600" />
+              <span className="text-lg font-semibold tracking-tight text-gray-900">
+                Element of Truth
+              </span>
             </motion.div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10">
-                <Activity className="w-4 h-4 text-neon-cyan animate-pulse" />
-                <span className="text-sm text-gray-200/80 font-montserrat">AI Systems Ready</span>
-              </div>
               <button
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-white text-black/90 hover:bg-white/90 transition font-montserrat text-sm shadow-[0_10px_28px_rgba(0,0,0,0.25)]"
+                className="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-900 text-sm font-medium transition-colors"
                 onClick={() => setCurrentView('auth')}
               >
-                <Sparkles className="w-4 h-4" />
-                Get Started
+                Log in
               </button>
-            </div>
+              <button
+                className="px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 text-sm font-medium transition-colors"
+                onClick={() => setCurrentView('auth')}
+              >
+                Get started
+              </button>
             </div>
           </div>
         </div>
@@ -111,43 +163,46 @@ function App() {
 
       {/* Main Content */}
       <div className="pt-20">
-        <AnimatePresence mode="wait">
-          {currentView === 'hero' ? (
-            <motion.div
-              key="hero"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.5 }}
-            >
-              <HeroSection onGenerate={handleGenerate} />
-            </motion.div>
-          ) : currentView === 'studio' ? (
-            <motion.div
-              key="studio"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              transition={{ duration: 0.5 }}
-            >
-              <StudioView
-                content={generatedContent}
-                isGenerating={isGenerating}
-                onBack={handleBackToHero}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="auth"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.4 }}
-            >
-              <AuthView onClose={() => setCurrentView('hero')} onSuccess={() => setCurrentView('hero')} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <LayoutGroup>
+          <AnimatePresence mode="wait">
+            {currentView === 'hero' ? (
+              <motion.div
+                key="hero"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.5 }}
+              >
+                <HeroSection onGenerate={handleGenerate} />
+              </motion.div>
+            ) : currentView === 'studio' ? (
+              <motion.div
+                key="studio"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.5 }}
+              >
+                <StudioView
+                  content={generatedContent}
+                  isGenerating={isGenerating}
+                  pipeline={pipeline}
+                  onBack={handleBackToHero}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="auth"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.4 }}
+              >
+                <AuthView onClose={() => setCurrentView('hero')} onSuccess={() => setCurrentView('hero')} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </LayoutGroup>
       </div>
     </div>
   )

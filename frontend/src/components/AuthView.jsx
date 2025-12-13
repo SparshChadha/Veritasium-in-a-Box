@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import { ArrowLeft, KeyRound, Mail, ShieldCheck, User } from 'lucide-react'
 
@@ -22,13 +23,13 @@ export default function AuthView({ onClose, onSuccess }) {
         <div className="flex items-center justify-between">
           <button
             onClick={onClose}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/6 border border-white/10 text-white/80 hover:bg-white/10 transition font-montserrat text-sm"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 border border-gray-200 text-gray-700 hover:bg-gray-200 transition font-montserrat text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-200/70 font-montserrat">
-            <ShieldCheck className="w-4 h-4 text-neon-cyan" />
+          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-600 font-montserrat">
+            <ShieldCheck className="w-4 h-4 text-blue-600" />
             Secure authentication (demo UI)
           </div>
         </div>
@@ -40,37 +41,37 @@ export default function AuthView({ onClose, onSuccess }) {
           className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
         >
           {/* Left: message */}
-          <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-8 cinematic-shadow">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 border border-white/10 text-xs text-gray-200/80">
+          <div className="rounded-3xl bg-white border border-gray-200 backdrop-blur-xl p-8 shadow-lg">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-700">
               ELEMENT OF TRUTH
             </div>
-            <h2 className="mt-4 text-3xl md:text-4xl font-cinzel font-bold text-white/90 tracking-tight">
+            <h2 className="mt-4 text-3xl md:text-4xl font-cinzel font-bold text-gray-900 tracking-tight">
               Enter the studio.
             </h2>
-            <p className="mt-3 text-gray-200/70 font-montserrat">
+            <p className="mt-3 text-gray-600 font-montserrat">
               Sign in to save projects, refine scripts, and publish your generated videos.
             </p>
 
-            <div className="mt-8 space-y-3 text-sm text-gray-200/70 font-montserrat">
+            <div className="mt-8 space-y-3 text-sm text-gray-600 font-montserrat">
               <div className="flex items-center gap-3">
-                <KeyRound className="w-4 h-4 text-neon-blue" />
+                <KeyRound className="w-4 h-4 text-blue-600" />
                 Fast sign-in (UI only for now)
               </div>
               <div className="flex items-center gap-3">
-                <ShieldCheck className="w-4 h-4 text-neon-cyan" />
-                Built for your “Element of Truth” pipeline
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                Built for your "Element of Truth" pipeline
               </div>
             </div>
           </div>
 
           {/* Right: form */}
-          <div className="rounded-3xl bg-black/35 border border-white/10 backdrop-blur-xl p-8 cinematic-shadow">
-            <div className="flex items-center gap-2 p-1 rounded-full bg-white/5 border border-white/10 w-fit">
+          <div className="rounded-3xl bg-white border border-gray-200 backdrop-blur-xl p-8 shadow-lg">
+            <div className="flex items-center gap-2 p-1 rounded-full bg-gray-100 border border-gray-200 w-fit">
               <button
                 type="button"
                 onClick={() => setMode('signin')}
                 className={`px-4 py-2 rounded-full text-sm font-montserrat transition ${
-                  mode === 'signin' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                  mode === 'signin' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Sign in
@@ -79,28 +80,28 @@ export default function AuthView({ onClose, onSuccess }) {
                 type="button"
                 onClick={() => setMode('signup')}
                 className={`px-4 py-2 rounded-full text-sm font-montserrat transition ${
-                  mode === 'signup' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                  mode === 'signup' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Sign up
               </button>
             </div>
 
-            <h3 className="mt-6 text-xl font-cinzel font-bold text-white">{title}</h3>
-            <p className="mt-1 text-sm text-gray-200/60 font-montserrat">
+            <h3 className="mt-6 text-xl font-cinzel font-bold text-gray-900">{title}</h3>
+            <p className="mt-1 text-sm text-gray-600 font-montserrat">
               {mode === 'signin' ? 'Welcome back.' : 'Create a new account to continue.'}
             </p>
 
             <form onSubmit={submit} className="mt-6 space-y-4">
               {mode === 'signup' && (
                 <label className="block">
-                  <div className="text-xs text-gray-200/60 font-montserrat mb-2">Name</div>
-                  <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:border-neon-cyan/60 transition">
-                    <User className="w-4 h-4 text-gray-300/70" />
+                  <div className="text-xs text-gray-600 font-montserrat mb-2">Name</div>
+                  <div className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 focus-within:border-blue-400 transition">
+                    <User className="w-4 h-4 text-gray-500" />
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-transparent outline-none text-white/90 font-montserrat"
+                      className="w-full bg-transparent outline-none text-gray-900 font-montserrat"
                       placeholder="Your name"
                     />
                   </div>
@@ -108,14 +109,14 @@ export default function AuthView({ onClose, onSuccess }) {
               )}
 
               <label className="block">
-                <div className="text-xs text-gray-200/60 font-montserrat mb-2">Email</div>
-                <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:border-neon-cyan/60 transition">
-                  <Mail className="w-4 h-4 text-gray-300/70" />
+                <div className="text-xs text-gray-600 font-montserrat mb-2">Email</div>
+                <div className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 focus-within:border-blue-400 transition">
+                  <Mail className="w-4 h-4 text-gray-500" />
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     type="email"
-                    className="w-full bg-transparent outline-none text-white/90 font-montserrat"
+                    className="w-full bg-transparent outline-none text-gray-900 font-montserrat"
                     placeholder="you@domain.com"
                     required
                   />
@@ -123,14 +124,14 @@ export default function AuthView({ onClose, onSuccess }) {
               </label>
 
               <label className="block">
-                <div className="text-xs text-gray-200/60 font-montserrat mb-2">Password</div>
-                <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:border-neon-cyan/60 transition">
-                  <KeyRound className="w-4 h-4 text-gray-300/70" />
+                <div className="text-xs text-gray-600 font-montserrat mb-2">Password</div>
+                <div className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 focus-within:border-blue-400 transition">
+                  <KeyRound className="w-4 h-4 text-gray-500" />
                   <input
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
-                    className="w-full bg-transparent outline-none text-white/90 font-montserrat"
+                    className="w-full bg-transparent outline-none text-gray-900 font-montserrat"
                     placeholder="••••••••"
                     required
                   />
@@ -141,12 +142,12 @@ export default function AuthView({ onClose, onSuccess }) {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 type="submit"
-                className="w-full h-11 rounded-xl bg-white text-black/90 hover:bg-white/90 transition font-montserrat font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.25)]"
+                className="w-full h-11 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition font-montserrat font-semibold shadow-lg"
               >
                 {mode === 'signin' ? 'Continue' : 'Create account'}
               </motion.button>
 
-              <div className="text-xs text-gray-200/50 font-montserrat">
+              <div className="text-xs text-gray-500 font-montserrat">
                 This is a UI-only auth screen. Hook it to your backend when ready.
               </div>
             </form>

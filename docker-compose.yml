@@ -77,16 +77,21 @@ services:
 
   # Backend API service
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"  # FastAPI backend
     volumes:
-      - ./research_outputs:/app/research_outputs  # Read/write access to outputs
-      - ./video_output:/app/video_output  # Read/write access to video outputs
+      - ./research_outputs:/app/research_outputs  # Persist outputs
+      - ./video_output/generated_tts:/app/video_output/generated_tts  # Persist audio
+      - ./video_output/generated_video:/app/video_output/generated_video  # Persist video
     environment:
+      - PROJECT_ROOT=/app
       - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       - ATLASCLOUD_API_KEY=${ATLASCLOUD_API_KEY}
+      - WAVESPEED_API_KEY=${WAVESPEED_API_KEY}
     networks:
       - kestra
     depends_on:
@@ -97,27 +102,11 @@ services:
       timeout: 10s
       retries: 3
 
-  # Model serving service for fine-tuned script generation
-  model-serve:
-    build: ./fine_tuned_model
-    ports:
-      - "8001:8000"  # FastAPI for draft generation (changed port to avoid conflict)
-    volumes:
-      - ./research_outputs:/app/outputs
-    environment:
-      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
-    networks:
-      - kestra
-    depends_on:
-      - kestra
-
   # Frontend React application
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
-    volumes:
-      - ./research_outputs:/app/public/research_outputs:ro  # Read-only access to outputs
+      - "3000:80"
     networks:
       - kestra
     depends_on:

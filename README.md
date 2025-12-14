@@ -21,7 +21,7 @@ An end-to-end AI-powered content generation pipeline for creating Veritasium-sty
 ### Prerequisites
 - Docker & Docker Compose
 - Python 3.8+
-- API Keys: `CEREBRAS_API_KEY`, `ELEVENLABS_API_KEY`, `ATLASCLOUD_API_KEY`
+- API Keys: `CEREBRAS_API_KEY`, `ELEVENLABS_API_KEY`, `ATLASCLOUD_API_KEY`,  `WAVESPEED_API_KEY`
 
 ### 1. Clone & Setup
 ```bash
@@ -106,7 +106,8 @@ Create a `.env` file with:
 CEREBRAS_API_KEY=your_key_here
 ELEVENLABS_API_KEY=your_key_here
 ATLASCLOUD_API_KEY=your_key_here
-HUGGINGFACE_TOKEN=your_token_here
+HUGGINGFACE_TOKEN=your_token_here (if you want to fine tune your model else not necessary)
+WAVESPEED_API_KEY=your_token_here
 ```
 
 ## 📊 Monitoring & Debugging
@@ -126,7 +127,7 @@ ls -la research_outputs/
 ls -la video_output/generated_tts/
 ```
 
-## 🚀 Production Deployment
+## 🚀 Production Deployment (in progress)
 
 ### Docker Swarm
 ```bash
